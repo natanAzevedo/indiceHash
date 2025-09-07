@@ -104,8 +104,11 @@ def search_scan(palavra):
     if tabela is None or tabela.get_total_tuplas() == 0:
         return jsonify({"erro": "Tabela não carregada. Carregue os dados primeiro."}), 400
 
+    # Pega parâmetro opcional para limite de registros
+    max_records = request.args.get('max_records', 100, type=int)
+
     inicio = time.time()
-    resultado_scan, custo_scan, scanned_records = tabela.table_scan_detailed(palavra)  # Assumir método detalhado que retorna também registros escaneados
+    resultado_scan, custo_scan, scan_info = tabela.table_scan_detailed(palavra, max_records)
     fim = time.time()
 
     resultado_serializado = None
@@ -120,7 +123,9 @@ def search_scan(palavra):
         "encontrado": resultado_scan is not None,
         "resultado": resultado_serializado,
         "custo": custo_scan,
-        "scanned_records": scanned_records  # Lista real de registros escaneados (ex: chaves das tuplas)
+        "scanned_records": scan_info["records"],
+        "total_scanned": scan_info["total_scanned"],
+        "limited_view": scan_info["limited"]
     }
     return jsonify(response), 200
 

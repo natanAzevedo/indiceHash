@@ -54,17 +54,49 @@ class Table:
 
         return None, custo
 
-    def table_scan_detailed(self, valor_busca: str):
+    def table_scan_detailed(self, valor_busca: str, max_records_to_show=100):
         custo = 0
         scanned_records = []
+        total_records_scanned = 0
+        found = False
+
         for pagina in self.paginas:
             custo += 1
             for tupla in pagina.get_tuplas():
-                scanned_records.append(tupla.valor)  # Adiciona o valor da tupla escaneada
-                if tupla.valor == valor_busca:
-                    return tupla, custo, scanned_records
-        return None, custo, scanned_records
+                total_records_scanned += 1
 
+                # Só adiciona registros para visualização se ainda não atingiu o limite
+                if len(scanned_records) < max_records_to_show:
+                    scanned_records.append({
+                        "index": total_records_scanned,
+                        "value": tupla.valor,
+                        "page": pagina.id
+                    })
+
+                # Verifica se encontrou o valor
+                if tupla.valor == valor_busca:
+                    found = True
+                    result_tupla = tupla
+                    # Adiciona o registro encontrado se não estiver na lista
+                    if len(scanned_records) == max_records_to_show and not any(
+                            r["value"] == tupla.valor for r in scanned_records):
+                        scanned_records.append({
+                            "index": total_records_scanned,
+                            "value": tupla.valor,
+                            "page": pagina.id,
+                            "found": True
+                        })
+                    return result_tupla, custo, {
+                        "records": scanned_records,
+                        "total_scanned": total_records_scanned,
+                        "limited": total_records_scanned > max_records_to_show
+                    }
+
+        return None, custo, {
+            "records": scanned_records,
+            "total_scanned": total_records_scanned,
+            "limited": total_records_scanned > max_records_to_show
+        }
     def get_total_pag(self) -> int:
         return len(self.paginas)
 

@@ -69,17 +69,25 @@ class Hash:
     def get_estatisticas(self):
         if self.nr == 0:
             return {
-                "total_registros": 0, "total_colisoes": 0, "taxa_colisao (%)": 0,
-                "total_overflows": 0, "taxa_overflow (%)": 0,
+                "total_registros": 0,
+                "total_colisoes": 0,
+                "taxa_colisoes": 0,  # Mudança aqui: removido "(%) "
+                "total_overflows": 0,
+                "taxa_overflows": 0,  # Mudança aqui: removido "(%)"
+                "total_buckets": 0,  # Campo adicionado
+                "fator_carga": 0  # Campo adicionado
             }
 
         taxa_colisao = (self.total_colisoes / self.nr) * 100
         taxa_overflow = (self.total_overflows / self.nr) * 100
+        fator_carga = self.nr / self.nb if self.nb > 0 else 0  # Novo cálculo
 
         return {
             "total_registros": self.nr,
+            "total_buckets": self.nb,  # Campo adicionado
             "total_colisoes": self.total_colisoes,
-            "taxa_colisao (%)": round(taxa_colisao, 2),
+            "taxa_colisoes": round(taxa_colisao, 2),  # Nome padronizado
             "total_overflows": self.total_overflows,
-            "taxa_overflow (%)": round(taxa_overflow, 2),
+            "taxa_overflows": round(taxa_overflow, 2),  # Nome padronizado
+            "fator_carga": round(fator_carga, 2)  # Campo adicionado
         }
