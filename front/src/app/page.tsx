@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -35,6 +35,7 @@ interface SearchResult {
   resultado: any
   pagina_id?: number
   custo: number
+  scanned_records?: string[]  // Novo campo para registros escaneados
 }
 
 export default function HashIndexInterface() {
@@ -109,6 +110,12 @@ export default function HashIndexInterface() {
     }
   }
 
+  useEffect(() => {
+    if (isIndexBuilt) {
+      loadStatistics()
+    }
+  }, [isIndexBuilt])
+
   const handleHashSearch = async () => {
     if (!searchKey.trim()) return
 
@@ -138,32 +145,12 @@ export default function HashIndexInterface() {
     setScanRecords([])
 
     try {
-      // Simular progresso do table scan
-      const progressInterval = setInterval(() => {
-        setScanProgress((prev) => {
-          if (prev >= 90) {
-            clearInterval(progressInterval)
-            return prev
-          }
-          return prev + Math.random() * 10
-        })
-      }, 200)
-
       const response = await fetch(`${API_BASE}/search_scan/${encodeURIComponent(searchKey)}`)
-
-      clearInterval(progressInterval)
-      setScanProgress(100)
-
       if (response.ok) {
         const data = await response.json()
         setScanResult(data)
-        // Simular registros encontrados durante o scan
-        setScanRecords([
-          `Página 1: verificando registros...`,
-          `Página 2: verificando registros...`,
-          `Página 3: verificando registros...`,
-          `Registro encontrado na página ${Math.floor(Math.random() * 100) + 1}!`,
-        ])
+        setScanRecords(data.scanned_records || [])  // Usa registros reais do backend
+        setScanProgress(100)
       } else {
         const errorData = await response.json()
         setError(errorData.erro || "Erro no table scan")
@@ -309,13 +296,13 @@ export default function HashIndexInterface() {
                     </Button>
                   </div>
 
-                  {loading && scanProgress > 0 && (
+                  {loading && (
                     <div className="space-y-2">
                       <div className="flex justify-between text-sm">
                         <span>Progresso do Scan</span>
-                        <span>{Math.round(scanProgress)}%</span>
+                        <span>Carregando...</span>
                       </div>
-                      <Progress value={scanProgress} className="w-full" />
+                      <Progress value={undefined} className="w-full" /> {/* Indicador de loading indeterminado */}
                     </div>
                   )}
 

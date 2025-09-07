@@ -67,7 +67,37 @@ def get_statistics():
     return jsonify(estatisticas), 200
 
 
-# Rota para busca com Table Scan
+# Nova rota para obter dados das páginas (para visualização real)
+@app.route("/pages", methods=["GET"])
+def get_pages():
+    global tabela
+    if tabela is None:
+        return jsonify({"erro": "Tabela não carregada."}), 400
+
+    # Assumindo que Table tem um método get_paginas() que retorna lista de páginas com tuplas
+    pages = tabela.get_paginas()  # Ajuste conforme implementação real
+    serialized_pages = [
+        {"id": i, "tuplas": [t.chave for t in page.tuplas]} for i, page in enumerate(pages)
+    ]
+    return jsonify(serialized_pages), 200
+
+
+# Nova rota para obter dados dos buckets (para visualização real)
+@app.route("/buckets", methods=["GET"])
+def get_buckets():
+    global indice_hash
+    if indice_hash is None:
+        return jsonify({"erro": "Índice não construído."}), 400
+
+    # Assumindo que Hash tem um método get_buckets() que retorna lista de buckets com mapeamentos
+    buckets = indice_hash.get_buckets()  # Ajuste conforme implementação real
+    serialized_buckets = [
+        {"id": i, "entradas": len(bucket.entradas), "overflow": bucket.overflow} for i, bucket in enumerate(buckets)
+    ]
+    return jsonify(serialized_buckets), 200
+
+
+# Rota para busca com Table Scan (agora retorna registros escaneados)
 @app.route("/search_scan/<palavra>", methods=["GET"])
 def search_scan(palavra):
     global tabela
@@ -75,22 +105,22 @@ def search_scan(palavra):
         return jsonify({"erro": "Tabela não carregada. Carregue os dados primeiro."}), 400
 
     inicio = time.time()
-    resultado_scan, custo_scan = tabela.table_scan(palavra)
+    resultado_scan, custo_scan, scanned_records = tabela.table_scan_detailed(palavra)  # Assumir método detalhado que retorna também registros escaneados
     fim = time.time()
 
-    # Converter resultado para formato serializável (assumindo que Tupla tem atributos chave e dados)
     resultado_serializado = None
     if resultado_scan:
         resultado_serializado = {
-            "chave": resultado_scan.chave,  # Ajuste conforme os atributos reais da classe Tupla
-            "dados": resultado_scan.valor   # Ajuste conforme os atributos reais da classe Tupla
+            "chave": resultado_scan.chave,
+            "dados": resultado_scan.valor
         }
 
     response = {
         "tempo_busca": f"{fim - inicio:.6f} segundos",
         "encontrado": resultado_scan is not None,
         "resultado": resultado_serializado,
-        "custo": custo_scan
+        "custo": custo_scan,
+        "scanned_records": scanned_records  # Lista real de registros escaneados (ex: chaves das tuplas)
     }
     return jsonify(response), 200
 
@@ -108,12 +138,11 @@ def search_hash(palavra):
     resultado_hash, custo_hash, pag_id = indice_hash.buscar(palavra, tabela)
     fim = time.time()
 
-    # Converter resultado para formato serializável (assumindo que Tupla tem atributos chave e dados)
     resultado_serializado = None
     if resultado_hash:
         resultado_serializado = {
-            "chave": resultado_hash.chave,  # Ajuste conforme os atributos reais da classe Tupla
-            "dados": resultado_hash.valor   # Ajuste conforme os atributos reais da classe Tupla
+            "chave": resultado_hash.chave,
+            "dados": resultado_hash.valor
         }
 
     response = {

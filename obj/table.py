@@ -54,6 +54,17 @@ class Table:
 
         return None, custo
 
+    def table_scan_detailed(self, valor_busca: str):
+        custo = 0
+        scanned_records = []
+        for pagina in self.paginas:
+            custo += 1
+            for tupla in pagina.get_tuplas():
+                scanned_records.append(tupla.valor)  # Adiciona o valor da tupla escaneada
+                if tupla.valor == valor_busca:
+                    return tupla, custo, scanned_records
+        return None, custo, scanned_records
+
     def get_total_pag(self) -> int:
         return len(self.paginas)
 
