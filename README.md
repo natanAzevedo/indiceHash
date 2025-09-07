@@ -22,12 +22,12 @@ Isso usa os scripts do `package.json` para executar ambos em paralelo via `concu
 ## 📋 Requisitos Principais
 
 ### ✅ 1. Interface Gráfica (1,0 ponto)
-- [ ] Criar interface gráfica obrigatória
-- [ ] Ilustrar estruturas de dados
-- [ ] Mostrar funcionamento do índice hash
-- [ ] Incluir campo para entrada da chave de busca
-- [ ] Exibir resultado da busca e número da página
-- [ ] Mostrar registros durante table scan
+- [X] Criar interface gráfica obrigatória
+- [X] Ilustrar estruturas de dados
+- [X] Mostrar funcionamento do índice hash
+- [X] Incluir campo para entrada da chave de busca
+- [X] Exibir resultado da busca e número da página
+- [X] Mostrar registros durante table scan
 
 ### ✅ 2. Funcionalidades Principais
 
@@ -41,13 +41,13 @@ Isso usa os scripts do `package.json` para executar ambos em paralelo via `concu
 - [X] Implementar busca usando índice construído
 - [X] Aplicar função hash na chave fornecida
 - [X] Localizar e ler página correspondente
-- [ ] Exibir resultado na interface
+- [X] Exibir resultado na interface
 
 #### 2.3 Table Scan
-- [ ] Implementar botão para table scan
-- [ ] Percorrer páginas sequencialmente
-- [ ] Listar registros até encontrar a chave
-- [ ] Calcular e exibir custo de leitura
+- [X] Implementar botão para table scan
+- [X] Percorrer páginas sequencialmente
+- [X] Listar registros até encontrar a chave
+- [X] Calcular e exibir custo de leitura
 
 ### ✅ 3. Entidades/Estruturas (POO)
 
@@ -179,8 +179,8 @@ Isso usa os scripts do `package.json` para executar ambos em paralelo via `concu
 
 ### Sprint 4: Refinamentos
 - [x] Tratar colisões e overflows
-- [ ] Finalizar interface
-- [ ] Preparar apresentação
+- [X] Finalizar interface
+- [X] Preparar apresentação
 
 ## 📝 Notas Importantes
 - Interface gráfica é **obrigatória**
