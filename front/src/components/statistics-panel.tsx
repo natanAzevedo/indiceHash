@@ -27,7 +27,7 @@ export function StatisticsPanel({statistics, tableData, searchResult, scanResult
 
         const hashCost = searchResult.custo
         const scanCost = scanResult.custo
-        const improvement = (((scanCost - hashCost) / scanCost) * 100).toFixed(1)
+        const improvement = (((scanCost - hashCost) / scanCost)).toFixed(1)
 
         return {
             hashCost,
@@ -91,20 +91,20 @@ export function StatisticsPanel({statistics, tableData, searchResult, scanResult
                                 <div className="flex justify-between items-center mb-2">
                                     <span className="text-sm font-medium">Taxa de Colisões</span>
                                     <Badge variant={statistics.taxa_colisoes > 0.1 ? "destructive" : "secondary"}>
-                                        {(statistics.taxa_colisoes * 100).toFixed(1)}%
+                                        {(statistics.taxa_colisoes).toFixed(1)}%
                                     </Badge>
                                 </div>
-                                <Progress value={statistics.taxa_colisoes * 100} className="h-2"/>
+                                <Progress value={statistics.taxa_colisoes} className="h-2"/>
                             </div>
 
                             <div>
                                 <div className="flex justify-between items-center mb-2">
                                     <span className="text-sm font-medium">Taxa de Overflows</span>
                                     <Badge variant={statistics.taxa_overflows > 0.05 ? "destructive" : "secondary"}>
-                                        {(statistics.taxa_overflows * 100).toFixed(1)}%
+                                        {(statistics.taxa_overflows).toFixed(1)}%
                                     </Badge>
                                 </div>
-                                <Progress value={statistics.taxa_overflows * 100} className="h-2"/>
+                                <Progress value={statistics.taxa_overflows} className="h-2"/>
                             </div>
 
                             <div>
@@ -114,7 +114,7 @@ export function StatisticsPanel({statistics, tableData, searchResult, scanResult
                                         {statistics.fator_carga.toFixed(2)}
                                     </Badge>
                                 </div>
-                                <Progress value={statistics.fator_carga * 100} className="h-2"/>
+                                <Progress value={statistics.fator_carga} className="h-2"/>
                             </div>
                         </div>
 
