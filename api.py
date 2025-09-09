@@ -49,11 +49,15 @@ def build_index():
 
     data = request.json
     tamanho_bucket_fr = data.get("tamanho_bucket_fr", 50)  # Valor default: 50
+    metodo_colisao = data.get("metodo_colisao", "overflow")  # Valor default: overflow
 
-    indice_hash = Hash(fr=tamanho_bucket_fr)
+    indice_hash = Hash(fr=tamanho_bucket_fr, metodo_colisao=metodo_colisao)
     indice_hash.construir(tabela)
 
-    return jsonify({"mensagem": "Índice hash construído com sucesso!"}), 200
+    return jsonify({
+        "mensagem": f"Índice hash construído com sucesso usando {metodo_colisao}!",
+        "metodo_colisao": metodo_colisao
+    }), 200
 
 
 # Rota para obter estatísticas do índice
@@ -158,6 +162,165 @@ def search_hash(palavra):
         "custo": custo_hash
     }
     return jsonify(response), 200
+
+
+# Nova rota para testar diferentes métodos de colisão
+@app.route("/test_collision_methods", methods=["POST"])
+def test_collision_methods():
+    global tabela
+    if tabela is None or tabela.get_total_tuplas() == 0:
+        return jsonify({"erro": "Tabela não carregada. Carregue os dados primeiro."}), 400
+
+    data = request.json
+    fr = data.get("fr", 3)  # Valor default: 3
+
+    try:
+        resultados = Hash.testar_metodos_colisao(tabela, fr)
+
+        # Preparar resposta comparativa
+        comparacao = {}
+        for metodo, stats in resultados.items():
+            comparacao[metodo] = {
+                "total_colisoes": stats["total_colisoes"],
+                "taxa_colisoes": stats["taxa_colisoes"],
+                "total_overflows": stats["total_overflows"],
+                "taxa_overflows": stats["taxa_overflows"],
+                "fator_carga": stats["fator_carga"],
+                "buckets_vazios": stats["distribuicao"]["buckets_vazios"],
+                "buckets_com_overflow": stats["distribuicao"]["buckets_com_overflow"]
+            }
+
+        # Determinar o melhor método
+        melhor_metodo = min(comparacao.keys(),
+                           key=lambda m: comparacao[m]["taxa_colisoes"])
+
+        response = {
+            "mensagem": "Teste de métodos de colisão realizado com sucesso!",
+            "fr_testado": fr,
+            "resultados": comparacao,
+            "melhor_metodo": melhor_metodo,
+            "resumo": {
+                "menor_taxa_colisoes": comparacao[melhor_metodo]["taxa_colisoes"],
+                "metodos_testados": list(comparacao.keys())
+            }
+        }
+
+        return jsonify(response), 200
+
+    except Exception as e:
+        return jsonify({"erro": f"Erro ao testar métodos: {str(e)}"}), 500
+
+
+# Nova rota para comparar funções hash
+@app.route("/compare_hash_functions", methods=["POST"])
+def compare_hash_functions():
+    global tabela, indice_hash
+    if tabela is None or tabela.get_total_tuplas() == 0:
+        return jsonify({"erro": "Tabela não carregada. Carregue os dados primeiro."}), 400
+    if indice_hash is None:
+        return jsonify({"erro": "Índice não construído. Construa o índice primeiro."}), 400
+
+    try:
+        resultados = indice_hash.comparar_funcoes_hash(tabela)
+
+        if resultados is None:
+            return jsonify({"erro": "Não foi possível comparar as funções hash."}), 400
+
+        # Determinar a melhor função hash
+        melhor_funcao = min(resultados.keys(),
+                           key=lambda f: resultados[f]["colisoes_teoricas"])
+
+        response = {
+            "mensagem": "Comparação de funções hash realizada com sucesso!",
+            "resultados": resultados,
+            "melhor_funcao": melhor_funcao,
+            "resumo": {
+                "menor_colisoes": resultados[melhor_funcao]["colisoes_teoricas"],
+                "funcoes_testadas": list(resultados.keys())
+            }
+        }
+
+        return jsonify(response), 200
+
+    except Exception as e:
+        return jsonify({"erro": f"Erro ao comparar funções hash: {str(e)}"}), 500
+
+
+# Nova rota para análise completa de performance
+@app.route("/performance_analysis", methods=["POST"])
+def performance_analysis():
+    global tabela
+    if tabela is None or tabela.get_total_tuplas() == 0:
+        return jsonify({"erro": "Tabela não carregada. Carregue os dados primeiro."}), 400
+
+    data = request.json
+    fr_values = data.get("fr_values", [3, 5, 10])  # Diferentes valores de FR para testar
+    palavras_teste = data.get("palavras_teste", ["test", "example", "word"])  # Palavras para busca
+
+    try:
+        analise_completa = {}
+
+        for fr in fr_values:
+            analise_completa[f"fr_{fr}"] = {}
+
+            # Testar cada método de colisão
+            metodos = ['overflow', 'linear_probing', 'quadratic_probing']
+            for metodo in metodos:
+                # Construir índice com método específico
+                hash_temp = Hash(fr=fr, metodo_colisao=metodo)
+                hash_temp.construir(tabela)
+
+                # Obter estatísticas
+                stats = hash_temp.get_estatisticas()
+
+                # Testar busca
+                tempos_busca = []
+                custos_busca = []
+
+                for palavra in palavras_teste:
+                    inicio = time.time()
+                    _, custo, _ = hash_temp.buscar(palavra, tabela)
+                    fim = time.time()
+
+                    tempos_busca.append(fim - inicio)
+                    custos_busca.append(custo)
+
+                # Calcular médias
+                tempo_medio = sum(tempos_busca) / len(tempos_busca) if tempos_busca else 0
+                custo_medio = sum(custos_busca) / len(custos_busca) if custos_busca else 0
+
+                analise_completa[f"fr_{fr}"][metodo] = {
+                    "estatisticas": stats,
+                    "performance_busca": {
+                        "tempo_medio": round(tempo_medio * 1000, 4),  # em milissegundos
+                        "custo_medio": round(custo_medio, 2),
+                        "palavras_testadas": len(palavras_teste)
+                    }
+                }
+
+        # Encontrar configuração ótima
+        melhor_config = None
+        menor_tempo = float('inf')
+
+        for fr_key, metodos in analise_completa.items():
+            for metodo, dados in metodos.items():
+                tempo = dados["performance_busca"]["tempo_medio"]
+                if tempo < menor_tempo:
+                    menor_tempo = tempo
+                    melhor_config = f"{fr_key}_{metodo}"
+
+        response = {
+            "mensagem": "Análise de performance completada!",
+            "analise_completa": analise_completa,
+            "melhor_configuracao": melhor_config,
+            "fr_testados": fr_values,
+            "palavras_teste": palavras_teste
+        }
+
+        return jsonify(response), 200
+
+    except Exception as e:
+        return jsonify({"erro": f"Erro na análise de performance: {str(e)}"}), 500
 
 
 if __name__ == "__main__":
