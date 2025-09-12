@@ -4,14 +4,13 @@ from obj.table import Table
 
 
 class Hash:
-    def __init__(self, fr: int, metodo_colisao='overflow'):
+    def __init__(self, fr: int):
         self.fr = fr
         self.nr = 0
         self.nb = 0
         self.buckets = []
         self.total_colisoes = 0
         self.total_overflows = 0
-        self.metodo_colisao = metodo_colisao  # 'overflow', 'linear_probing', 'quadratic_probing'
 
     def funcao_hash(self, valor_str: str) -> int:
         """Função hash DJB2 - distribuição otimizada"""
@@ -19,30 +18,6 @@ class Hash:
         for c in valor_str:
             hash_valor = ((hash_valor << 5) + hash_valor) + ord(c)
         return hash_valor % self.nb
-
-    def sondagem_linear(self, indice_inicial: int) -> int:
-        """Implementa sondagem linear para encontrar próxima posição livre"""
-        indice = indice_inicial
-        tentativas = 0
-
-        while tentativas < self.nb:
-            if not self.buckets[indice].esta_cheio():
-                return indice
-            indice = (indice + 1) % self.nb
-            tentativas += 1
-
-        # Se todos os buckets estão cheios, retorna o índice original
-        return indice_inicial
-
-    def sondagem_quadratica(self, indice_inicial: int) -> int:
-        """Implementa sondagem quadrática para encontrar próxima posição livre"""
-        for i in range(self.nb):
-            indice = (indice_inicial + i * i) % self.nb
-            if not self.buckets[indice].esta_cheio():
-                return indice
-
-        # Se não encontrar posição livre, retorna o índice original
-        return indice_inicial
 
     def construir(self, tabela: Table):
         dados_tabela = tabela.get_info_indice()
@@ -60,20 +35,11 @@ class Hash:
         self.total_overflows = 0
 
         for chave_id, valor_str, id_pag in dados_tabela:
-            indice_original = self.funcao_hash(valor_str)
-            indice_final = indice_original
+            indice = self.funcao_hash(valor_str)
+            bucket_alvo = self.buckets[indice]
 
-            # Aplicar estratégia de tratamento de colisões
-            if self.metodo_colisao == 'linear_probing':
-                indice_final = self.sondagem_linear(indice_original)
-            elif self.metodo_colisao == 'quadratic_probing':
-                indice_final = self.sondagem_quadratica(indice_original)
-
-            # Verificar se houve colisão (posição já ocupada)
-            bucket_alvo = self.buckets[indice_final]
-
-            # Contar colisão se bucket já tem entradas OU se mudou de posição
-            if len(bucket_alvo.entradas) > 0 or indice_final != indice_original:
+            # Contar colisão se bucket já tem entradas
+            if len(bucket_alvo.entradas) > 0:
                 self.total_colisoes += 1
 
             # Adicionar entrada ao bucket
@@ -85,54 +51,15 @@ class Hash:
         if not self.buckets:
             return None, 0, None
 
-        indice_original = self.funcao_hash(valor_busca)
+        indice = self.funcao_hash(valor_busca)
         paginas_a_visitar = set()
 
-        if self.metodo_colisao == 'overflow':
-            # Busca apenas no bucket original e seus overflows
-            bucket_atual = self.buckets[indice_original]
-            while bucket_atual:
-                for _, id_pag in bucket_atual.entradas:
-                    paginas_a_visitar.add(id_pag)
-                bucket_atual = bucket_atual.overflow_bucket
-
-        else:
-            # Para probing, busca mais eficiente
-            posicoes_verificar = []
-
-            if self.metodo_colisao == 'linear_probing':
-                # Busca linear até encontrar bucket vazio ou limite razoável
-                limite_busca = min(100, self.nb)  # Limita busca para evitar percorrer tudo
-                for i in range(limite_busca):
-                    pos = (indice_original + i) % self.nb
-                    bucket = self.buckets[pos]
-                    
-                    # Se bucket tem entradas, verificar se pode conter nossa chave
-                    if len(bucket.entradas) > 0:
-                        posicoes_verificar.append(pos)
-                    else:
-                        # Bucket vazio = fim da sequência de probing
-                        break
-
-            elif self.metodo_colisao == 'quadratic_probing':
-                # Busca quadrática com limite
-                limite_busca = min(100, self.nb)
-                for i in range(limite_busca):
-                    pos = (indice_original + i * i) % self.nb
-                    bucket = self.buckets[pos]
-                    
-                    if len(bucket.entradas) > 0:
-                        posicoes_verificar.append(pos)
-                    else:
-                        break
-
-            # Coletar páginas de todas as posições relevantes
-            for pos in posicoes_verificar:
-                bucket_atual = self.buckets[pos]
-                while bucket_atual:
-                    for _, id_pag in bucket_atual.entradas:
-                        paginas_a_visitar.add(id_pag)
-                    bucket_atual = bucket_atual.overflow_bucket
+        # Busca no bucket original e seus overflows
+        bucket_atual = self.buckets[indice]
+        while bucket_atual:
+            for _, id_pag in bucket_atual.entradas:
+                paginas_a_visitar.add(id_pag)
+            bucket_atual = bucket_atual.overflow_bucket
 
         # Buscar nas páginas coletadas
         custo = len(paginas_a_visitar)
@@ -195,7 +122,6 @@ class Hash:
                 "total_overflows": 0,
                 "taxa_overflows": 0,
                 "fator_carga": 0,
-                "metodo_colisao": self.metodo_colisao,
                 "distribuicao": None
             }
 
@@ -212,7 +138,6 @@ class Hash:
             "total_overflows": self.total_overflows,
             "taxa_overflows": round(taxa_overflow, 2),
             "fator_carga": round(fator_carga, 2),
-            "metodo_colisao": self.metodo_colisao,
             "distribuicao": distribuicao
         }
 
@@ -257,28 +182,6 @@ class Hash:
         media = sum(valores) / len(valores)
         variancia = sum((x - media) ** 2 for x in valores) / len(valores)
         return math.sqrt(variancia)
-
-    @staticmethod
-    def testar_metodos_colisao(tabela: Table, fr: int = 3):
-        """Testa diferentes métodos de tratamento de colisões"""
-        metodos = ['overflow', 'linear_probing', 'quadratic_probing']
-        resultados = {}
-
-        for metodo in metodos:
-            print(f"\n=== Testando {metodo.upper()} ===")
-
-            hash_index = Hash(fr, metodo_colisao=metodo)
-            hash_index.construir(tabela)
-
-            stats = hash_index.obter_estatisticas()
-            resultados[metodo] = stats
-
-            print(f"Colisões: {stats['total_colisoes']} ({stats['taxa_colisoes']}%)")
-            print(f"Overflows: {stats['total_overflows']} ({stats['taxa_overflows']}%)")
-            print(f"Fator de carga: {stats['fator_carga']}")
-            print(f"Buckets vazios: {stats['distribuicao']['buckets_vazios']}")
-
-        return resultados
 
     def obter_buckets(self):
         """Retorna lista de buckets para visualização"""

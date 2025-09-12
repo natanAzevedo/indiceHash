@@ -21,8 +21,7 @@ if __name__ == "__main__":
 
         # 3. Construir o índice hash com configuração otimizada
         tamanho_bucket_fr = 5  # Otimizado: configuração de máxima eficiência
-        metodo_colisao = 'linear_probing'  # Melhor método para eliminar overflows
-        indice_hash = Hash(fr=tamanho_bucket_fr, metodo_colisao=metodo_colisao)
+        indice_hash = Hash(fr=tamanho_bucket_fr)
         indice_hash.construir(tabela)
 
         # 4. Exibir estatísticas melhoradas
@@ -33,7 +32,6 @@ if __name__ == "__main__":
         print(f"  Fator de Carga: {estatisticas['fator_carga']}")
         print(f"  Taxa de Colisões: {estatisticas['taxa_colisoes']}%")
         print(f"  Taxa de Overflows: {estatisticas['taxa_overflows']}%")
-        print(f"  Método de Colisão: {estatisticas['metodo_colisao']}")
         
         # Análise de qualidade
         if estatisticas['taxa_colisoes'] < 85:
