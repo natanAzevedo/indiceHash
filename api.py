@@ -48,8 +48,8 @@ def build_index():
         return jsonify({"erro": "Tabela não carregada. Carregue os dados primeiro."}), 400
 
     data = request.json
-    tamanho_bucket_fr = data.get("tamanho_bucket_fr", 50)  # Valor default: 50
-    metodo_colisao = data.get("metodo_colisao", "overflow")  # Valor default: overflow
+    tamanho_bucket_fr = data.get("tamanho_bucket_fr", 5)  # OTIMIZADO: 5 ao invés de 50
+    metodo_colisao = data.get("metodo_colisao", "linear_probing")  # OTIMIZADO: linear_probing
 
     indice_hash = Hash(fr=tamanho_bucket_fr, metodo_colisao=metodo_colisao)
     indice_hash.construir(tabela)
@@ -67,7 +67,7 @@ def get_statistics():
     if indice_hash is None:
         return jsonify({"erro": "Índice não construído. Construa o índice primeiro."}), 400
 
-    estatisticas = indice_hash.get_estatisticas()
+    estatisticas = indice_hash.obter_estatisticas()
     return jsonify(estatisticas), 200
 
 
@@ -94,7 +94,7 @@ def get_buckets():
         return jsonify({"erro": "Índice não construído."}), 400
 
     # Assumindo que Hash tem um método get_buckets() que retorna lista de buckets com mapeamentos
-    buckets = indice_hash.get_buckets()  # Ajuste conforme implementação real
+    buckets = indice_hash.obter_buckets()  # Ajuste conforme implementação real
     serialized_buckets = [
         {"id": i, "entradas": len(bucket.entradas), "overflow": bucket.overflow} for i, bucket in enumerate(buckets)
     ]
@@ -271,7 +271,7 @@ def performance_analysis():
                 hash_temp.construir(tabela)
 
                 # Obter estatísticas
-                stats = hash_temp.get_estatisticas()
+                stats = hash_temp.obter_estatisticas()
 
                 # Testar busca
                 tempos_busca = []

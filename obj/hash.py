@@ -1,5 +1,4 @@
 import math
-import hashlib
 from obj.bucket import Bucket
 from obj.table import Table
 
@@ -14,31 +13,15 @@ class Hash:
         self.total_overflows = 0
         self.metodo_colisao = metodo_colisao  # 'overflow', 'linear_probing', 'quadratic_probing'
 
-    def funcao_hash_simples(self, valor_str: str) -> int:
-        """Função hash original - mantida para compatibilidade"""
-        hash_valor = sum(ord(c) for c in valor_str)
-        return hash_valor % self.nb
-
-    def funcao_hash_melhorada(self, valor_str: str) -> int:
-        """Função hash melhorada usando SHA-256"""
-        hash_obj = hashlib.sha256(valor_str.encode('utf-8'))
-        hash_hex = hash_obj.hexdigest()
-        hash_int = int(hash_hex[:8], 16)  # Usa apenas os primeiros 8 caracteres
-        return hash_int % self.nb
-
-    def funcao_hash_djb2(self, valor_str: str) -> int:
-        """Função hash DJB2 - boa distribuição"""
+    def funcao_hash(self, valor_str: str) -> int:
+        """Função hash DJB2 - distribuição otimizada"""
         hash_valor = 5381
         for c in valor_str:
             hash_valor = ((hash_valor << 5) + hash_valor) + ord(c)
         return hash_valor % self.nb
 
-    def funcao_hash(self, valor_str: str) -> int:
-        """Função hash principal - usa DJB2 por padrão"""
-        return self.funcao_hash_djb2(valor_str)
-
-    def linear_probing(self, indice_inicial: int) -> int:
-        """Implementa linear probing para encontrar próxima posição livre"""
+    def sondagem_linear(self, indice_inicial: int) -> int:
+        """Implementa sondagem linear para encontrar próxima posição livre"""
         indice = indice_inicial
         tentativas = 0
 
@@ -51,8 +34,8 @@ class Hash:
         # Se todos os buckets estão cheios, retorna o índice original
         return indice_inicial
 
-    def quadratic_probing(self, indice_inicial: int) -> int:
-        """Implementa quadratic probing para encontrar próxima posição livre"""
+    def sondagem_quadratica(self, indice_inicial: int) -> int:
+        """Implementa sondagem quadrática para encontrar próxima posição livre"""
         for i in range(self.nb):
             indice = (indice_inicial + i * i) % self.nb
             if not self.buckets[indice].esta_cheio():
@@ -82,9 +65,9 @@ class Hash:
 
             # Aplicar estratégia de tratamento de colisões
             if self.metodo_colisao == 'linear_probing':
-                indice_final = self.linear_probing(indice_original)
+                indice_final = self.sondagem_linear(indice_original)
             elif self.metodo_colisao == 'quadratic_probing':
-                indice_final = self.quadratic_probing(indice_original)
+                indice_final = self.sondagem_quadratica(indice_original)
 
             # Verificar se houve colisão (posição já ocupada)
             bucket_alvo = self.buckets[indice_final]
@@ -114,22 +97,34 @@ class Hash:
                 bucket_atual = bucket_atual.overflow_bucket
 
         else:
-            # Para probing, precisa verificar múltiplas posições
+            # Para probing, busca mais eficiente
             posicoes_verificar = []
 
             if self.metodo_colisao == 'linear_probing':
-                for i in range(self.nb):
+                # Busca linear até encontrar bucket vazio ou limite razoável
+                limite_busca = min(100, self.nb)  # Limita busca para evitar percorrer tudo
+                for i in range(limite_busca):
                     pos = (indice_original + i) % self.nb
-                    posicoes_verificar.append(pos)
-                    if len(self.buckets[pos].entradas) == 0:
-                        break  # Para quando encontrar bucket vazio
+                    bucket = self.buckets[pos]
+                    
+                    # Se bucket tem entradas, verificar se pode conter nossa chave
+                    if len(bucket.entradas) > 0:
+                        posicoes_verificar.append(pos)
+                    else:
+                        # Bucket vazio = fim da sequência de probing
+                        break
 
             elif self.metodo_colisao == 'quadratic_probing':
-                for i in range(self.nb):
+                # Busca quadrática com limite
+                limite_busca = min(100, self.nb)
+                for i in range(limite_busca):
                     pos = (indice_original + i * i) % self.nb
-                    posicoes_verificar.append(pos)
-                    if len(self.buckets[pos].entradas) == 0:
-                        break  # Para quando encontrar bucket vazio
+                    bucket = self.buckets[pos]
+                    
+                    if len(bucket.entradas) > 0:
+                        posicoes_verificar.append(pos)
+                    else:
+                        break
 
             # Coletar páginas de todas as posições relevantes
             for pos in posicoes_verificar:
@@ -190,7 +185,7 @@ class Hash:
 
         return distribuicao
 
-    def get_estatisticas(self):
+    def obter_estatisticas(self):
         if self.nr == 0:
             return {
                 "total_registros": 0,
@@ -222,38 +217,37 @@ class Hash:
         }
 
     def comparar_funcoes_hash(self, tabela: Table):
-        """Compara diferentes funções hash"""
+        """Analisa a distribuição da função hash atual"""
         dados_tabela = tabela.get_info_indice()
 
         if not dados_tabela:
             return None
 
-        funcoes = {
-            'simples': self.funcao_hash_simples,
-            'djb2': self.funcao_hash_djb2,
-            'sha256': self.funcao_hash_melhorada
-        }
+        # Garantir que nb está definido para a função hash
+        if self.nb == 0:
+            self.nr = len(dados_tabela)
+            self.nb = math.ceil(self.nr / self.fr)
 
-        resultados = {}
+        # Analisar apenas a função hash atual (DJB2)
+        distribuicao = {}
+        for _, valor_str, _ in dados_tabela:
+            indice = self.funcao_hash(valor_str)
+            distribuicao[indice] = distribuicao.get(indice, 0) + 1
 
-        for nome, funcao in funcoes.items():
-            distribuicao = {}
-            for _, valor_str, _ in dados_tabela:
-                indice = funcao(valor_str)
-                distribuicao[indice] = distribuicao.get(indice, 0) + 1
+        # Calcular estatísticas de distribuição
+        valores = list(distribuicao.values())
+        colisoes_teoricas = sum(max(0, v - 1) for v in valores)
 
-            # Calcular estatísticas de distribuição
-            valores = list(distribuicao.values())
-            colisoes_teoricas = sum(max(0, v - 1) for v in valores)
-
-            resultados[nome] = {
+        resultado = {
+            'djb2': {
                 'colisoes_teoricas': colisoes_teoricas,
                 'buckets_utilizados': len(distribuicao),
                 'max_por_bucket': max(valores) if valores else 0,
                 'desvio_padrao': self._calcular_desvio_padrao(valores) if valores else 0
             }
+        }
 
-        return resultados
+        return resultado
 
     def _calcular_desvio_padrao(self, valores):
         """Calcula desvio padrão"""
@@ -276,7 +270,7 @@ class Hash:
             hash_index = Hash(fr, metodo_colisao=metodo)
             hash_index.construir(tabela)
 
-            stats = hash_index.get_estatisticas()
+            stats = hash_index.obter_estatisticas()
             resultados[metodo] = stats
 
             print(f"Colisões: {stats['total_colisoes']} ({stats['taxa_colisoes']}%)")
@@ -286,7 +280,7 @@ class Hash:
 
         return resultados
 
-    def get_buckets(self):
+    def obter_buckets(self):
         """Retorna lista de buckets para visualização"""
         return self.buckets
 

@@ -56,7 +56,7 @@ export default function HashIndexInterface() {
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState("")
     const [pageSize, setPageSize] = useState(100)
-    const [bucketSize, setBucketSize] = useState(50)
+    const [bucketSize, setBucketSize] = useState(5)  // OTIMIZADO: 5 ao invés de 50
     const [isIndexBuilt, setIsIndexBuilt] = useState(false)
     const [scanProgress, setScanProgress] = useState(0)
     const [scanRecords, setScanRecords] = useState<Array<{
@@ -96,7 +96,10 @@ export default function HashIndexInterface() {
             const response = await fetch(`${API_BASE}/build_index`, {
                 method: "POST",
                 headers: {"Content-Type": "application/json"},
-                body: JSON.stringify({tamanho_bucket_fr: bucketSize}),
+                body: JSON.stringify({
+                    tamanho_bucket_fr: bucketSize,
+                    metodo_colisao: "linear_probing"  // Usar método otimizado
+                }),
             })
 
             if (response.ok) {

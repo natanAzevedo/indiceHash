@@ -1,4 +1,4 @@
-## 🚀 Iniciando o Projeto
+## Iniciando o Projeto
 
 Para rodar o projeto, você pode iniciar o frontend (Next.js) e o backend (Flask) de forma integrada ou manualmente. A integração é recomendada para desenvolvimento, pois executa ambos simultaneamente.
 
@@ -19,9 +19,9 @@ Isso usa os scripts do `package.json` para executar ambos em paralelo via `concu
 }
 ```
 
-## 📋 Requisitos Principais
+## Requisitos Principais
 
-### ✅ 1. Interface Gráfica (1,0 ponto)
+### 1. Interface Gráfica (1,0 ponto)
 - [X] Criar interface gráfica obrigatória
 - [X] Ilustrar estruturas de dados
 - [X] Mostrar funcionamento do índice hash
@@ -29,7 +29,7 @@ Isso usa os scripts do `package.json` para executar ambos em paralelo via `concu
 - [X] Exibir resultado da busca e número da página
 - [X] Mostrar registros durante table scan
 
-### ✅ 2. Funcionalidades Principais
+### 2. Funcionalidades Principais
 
 #### 2.1 Construção do Índice
 - [X] Implementar carregamento do arquivo de dados
@@ -49,7 +49,7 @@ Isso usa os scripts do `package.json` para executar ambos em paralelo via `concu
 - [X] Listar registros até encontrar a chave
 - [X] Calcular e exibir custo de leitura
 
-### ✅ 3. Entidades/Estruturas (POO)
+### 3. Entidades/Estruturas (POO)
 
 #### 3.1 Classe Tupla
 - [X] Implementar representação de linha da tabela
@@ -77,7 +77,7 @@ Isso usa os scripts do `package.json` para executar ambos em paralelo via `concu
 - [X] Mapear chave de busca → endereço do bucket
 - [X] Documentar escolha da função
 
-### ✅ 4. Parâmetros de Configuração
+### 4. Parâmetros de Configuração
 
 #### 4.1 Arquivo de Dados
 - [X] Usar arquivo com 466 mil palavras em inglês
@@ -90,7 +90,7 @@ Isso usa os scripts do `package.json` para executar ambos em paralelo via `concu
 - [x] Tamanho dos buckets (FR)
 - [x] Campo para chave de busca
 
-### ✅ 5. Tratamento de Problemas
+### 5. Tratamento de Problemas
 
 #### 5.1 Resolução de Colisões
 - [x] Implementar algoritmo para tratar colisões
@@ -102,25 +102,25 @@ Isso usa os scripts do `package.json` para executar ambos em paralelo via `concu
 - [x] Calcular taxa de overflows (0,5 pontos)
 - [x] Exibir estatística na interface
 
-### ✅ 6. Funcionalidades de Pesquisa (2,0 pontos)
+### 6. Funcionalidades de Pesquisa (2,0 pontos)
 - [x] Implementar busca por chave usando índice
 - [x] Retornar tupla e número da página
 - [x] Calcular e mostrar custo (acessos a disco)
 - [x] Validar funcionamento completo
 
-### ✅ 7. Estatísticas e Métricas (0,5 pontos)
+### 7. Estatísticas e Métricas (0,5 pontos)
 - [x] Calcular estimativa de custo para busca indexada
 - [x] Calcular custo do table scan (páginas lidas)
 - [x] Exibir todas as métricas na interface
 - [x] Comparar eficiência entre métodos
 
-### ✅ 8. Table Scan Completo (0,5 pontos)
+### 8. Table Scan Completo (0,5 pontos)
 - [x] Implementar percurso sequencial
 - [x] Mostrar progresso na interface
 - [x] Calcular custo total
 - [x] Comparar com busca indexada
 
-## 🔄 Fluxo de Funcionamento
+## Fluxo de Funcionamento
 
 ### Etapa 1: Preparação
 - [x] Carregar arquivo de dados em memória
@@ -143,7 +143,7 @@ Isso usa os scripts do `package.json` para executar ambos em paralelo via `concu
 - [x] Mostrar progresso até encontrar chave
 - [x] Exibir custo total do scan
 
-## 📊 Critérios de Avaliação
+## Critérios de Avaliação
 
 | Critério | Pontos | Status |
 |----------|---------|---------|
@@ -160,7 +160,7 @@ Isso usa os scripts do `package.json` para executar ambos em paralelo via `concu
 | Estimativa de custo | 0,5 | [x] |
 | **TOTAL** | **10,0** | 9,0 (falta interface) |
 
-## 🚀 Próximos Passos
+## Próximos Passos
 
 ### Sprint 1: Estruturas Básicas
 - [x] Definir arquitetura do projeto
@@ -182,7 +182,7 @@ Isso usa os scripts do `package.json` para executar ambos em paralelo via `concu
 - [X] Finalizar interface
 - [X] Preparar apresentação
 
-## 📝 Notas Importantes
+## Notas Importantes
 - Interface gráfica é **obrigatória**
 - Usar **POO** como padrão
 - Arquivo de dados: 466 mil palavras inglesas
