@@ -20,7 +20,7 @@ class Bucket:
                 self.overflow_bucket.nivel_overflow = self.nivel_overflow + 1
 
             # Adicionar recursivamente ao overflow bucket
-            overflow_ocorreu = self.overflow_bucket.adicionar(chave, id_pag)
+            self.overflow_bucket.adicionar(chave, id_pag)
             return True  # Sempre retorna True pois houve overflow neste nível
 
     def buscar_entrada(self, chave: int):
