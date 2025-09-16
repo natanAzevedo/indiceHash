@@ -49,9 +49,9 @@ def build_index():
 
     data = request.json
     tamanho_bucket_fr = data.get("tamanho_bucket_fr", 5)  # OTIMIZADO: 5 ao invés de 50
-    metodo_colisao = data.get("metodo_colisao", "linear_probing")  # OTIMIZADO: linear_probing
+    metodo_colisao = data.get("metodo_colisao", "overflow_buckets")  # Método fixo: overflow buckets
 
-    indice_hash = Hash(fr=tamanho_bucket_fr, metodo_colisao=metodo_colisao)
+    indice_hash = Hash(fr=tamanho_bucket_fr)
     indice_hash.construir(tabela)
 
     return jsonify({
