@@ -14,6 +14,7 @@ class Hash:
 
     def funcao_hash(self, valor_str: str) -> int:
         """Função hash DJB2 - distribuição otimizada"""
+        return 0
         hash_valor = 5381
         for c in valor_str:
             hash_valor = ((hash_valor << 5) + hash_valor) + ord(c)
@@ -34,18 +35,59 @@ class Hash:
         self.total_colisoes = 0
         self.total_overflows = 0
 
+        print(f"Construindo índice com {self.nr} registros, {self.nb} buckets, FR={self.fr}")
+        print("ATENÇÃO: Função hash retorna sempre 0 - usando inserção em lotes para otimizar!")
+
+        # OTIMIZAÇÃO 1: Agrupar dados por bucket antes de inserir
+        dados_por_bucket = {}
+        print("Agrupando dados por bucket...")
+
         for chave_id, valor_str, id_pag in dados_tabela:
             indice = self.funcao_hash(valor_str)
+            if indice not in dados_por_bucket:
+                dados_por_bucket[indice] = []
+            dados_por_bucket[indice].append((chave_id, id_pag))
+
+        # OTIMIZAÇÃO 2: Inserir em lotes por bucket
+        for indice, lista_entradas in dados_por_bucket.items():
             bucket_alvo = self.buckets[indice]
+            total_entradas_bucket = len(lista_entradas)
 
-            # Contar colisão se bucket já tem entradas
-            if len(bucket_alvo.entradas) > 0:
-                self.total_colisoes += 1
+            print(f"Inserindo {total_entradas_bucket} entradas no bucket {indice}...")
 
-            # Adicionar entrada ao bucket
-            ocorreu_overflow = bucket_alvo.adicionar(chave_id, id_pag)
-            if ocorreu_overflow:
-                self.total_overflows += 1
+            # Contar colisões (todas exceto a primeira são colisões)
+            if total_entradas_bucket > 1:
+                self.total_colisoes += total_entradas_bucket - 1
+
+            # OTIMIZAÇÃO 3: Inserção sequencial eficiente
+            bucket_atual = bucket_alvo
+            entradas_processadas = 0
+
+            for chave_id, id_pag in lista_entradas:
+                # Se bucket atual está cheio, criar próximo overflow
+                while bucket_atual.esta_cheio():
+                    if bucket_atual.overflow_bucket is None:
+                        bucket_atual.overflow_bucket = Bucket(self.fr)
+                        bucket_atual.overflow_bucket.nivel_overflow = bucket_atual.nivel_overflow + 1
+
+                    bucket_atual = bucket_atual.overflow_bucket
+                    self.total_overflows += 1
+
+                # Adicionar entrada ao bucket atual
+                bucket_atual.entradas.append((chave_id, id_pag))
+                entradas_processadas += 1
+
+                # Log de progresso para buckets com muitos dados
+                if total_entradas_bucket > 1000 and entradas_processadas % 1000 == 0:
+                    print(f"  Processadas {entradas_processadas}/{total_entradas_bucket} entradas...")
+
+        print(f"Índice construído: {self.total_colisoes} colisões, {self.total_overflows} overflows")
+
+        # Debug info para bucket 0 (onde provavelmente todos os dados estão)
+        bucket_0 = self.buckets[0]
+        total_entradas_bucket_0 = bucket_0.get_total_entradas()
+        max_nivel = bucket_0.get_max_nivel_overflow()
+        print(f"Bucket 0: {total_entradas_bucket_0} entradas totais, nível máximo overflow: {max_nivel}")
 
     def buscar(self, valor_busca: str, tabela: Table):
         if not self.buckets:

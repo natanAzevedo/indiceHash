@@ -169,7 +169,7 @@ def search_hash(palavra):
 def test_collision_methods():
     global tabela
     if tabela is None or tabela.get_total_tuplas() == 0:
-        return jsonify({"erro": "Tabela não carregada. Carregue os dados primeiro."}), 400
+        return jsonify({"error": "Tabela não carregada. Carregue os dados primeiro."}), 400
 
     data = request.json
     fr = data.get("fr", 3)  # Valor default: 3
